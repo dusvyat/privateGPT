@@ -17,7 +17,7 @@ model_n_ctx = os.environ.get('MODEL_N_CTX')
 
 from constants import CHROMA_SETTINGS
 
-def main():
+def run():
     llama = LlamaCppEmbeddings(model_path=llama_embeddings_model, n_ctx=model_n_ctx)
     db = Chroma(persist_directory=persist_directory, embedding_function=llama, client_settings=CHROMA_SETTINGS)
     retriever = db.as_retriever()
@@ -31,6 +31,8 @@ def main():
         case _default:
             print(f"Model {model_type} not supported!")
             exit;
+
+    # Create the chain and retrieve relevant text chunks, only use the relevant text chunks in the language model
     qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=True)
     # Interactive questions and answers
     while True:
@@ -54,4 +56,4 @@ def main():
             print(document.page_content)
 
 if __name__ == "__main__":
-    main()
+    run()
