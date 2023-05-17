@@ -1,7 +1,12 @@
 import pandas as pd
 
 
-def preprocess(df,output_path="source_documents/drug_context_cleaned.csv"):
+def preprocess(input_path='unprocessed_data/drug_context_data.csv', output_path="source_documents/drug_context_cleaned.csv"):
+
+	# remove columns with more than 40% null values
+
+	df = pd.read_csv(input_path, low_memory=False, encoding='utf-8')
+
 	original_columns = list(df.columns)
 
 
@@ -13,9 +18,14 @@ def preprocess(df,output_path="source_documents/drug_context_cleaned.csv"):
 		axis=1, thresh=df.shape[0] * 0.4, inplace=True
 	)
 
+	df.drop_duplicates(inplace=True)
+
 	after_columns = list(df.columns)
 
 	df.fillna(inplace=True, value='Data Not Available')
+
+	# remove special characters
+	df.replace(to_replace=r'[^a-zA-Z0-9 ]+', value='', regex=True, inplace=True)
 
 	col_rename_dict = {
 		'package_label_principal_display_panel': 'product_package_label',
@@ -44,6 +54,5 @@ def preprocess(df,output_path="source_documents/drug_context_cleaned.csv"):
 
 
 if __name__ == "__main__":
-	df = pd.read_csv('drug_context_data.csv')
 
-	preprocess(df)
+	preprocess()

@@ -12,20 +12,6 @@ from langchain.embeddings import LlamaCppEmbeddings, HuggingFaceEmbeddings
 from chromadb.config import Settings
 from langchain.vectorstores import Chroma
 
-from pathlib import Path
-
-TOGGLE_LOGGING = False
-
-PACKAGE_ROOT = Path(__file__).parent
-OUTPUT_PATH = PACKAGE_ROOT / "data" / "outputs"
-QUERY_PATH = PACKAGE_ROOT / "data" / "queries"
-
-check_path_exists = lambda path: os.makedirs(path, exist_ok=True)
-
-# create output and query directory if they don't exist
-check_path_exists(OUTPUT_PATH)
-check_path_exists(QUERY_PATH)
-
 # load environment variables
 load_dotenv()
 
@@ -44,39 +30,6 @@ CHROMA_SETTINGS = Settings(
         persist_directory=PERSIST_DIRECTORY,
         anonymized_telemetry=False
 )
-
-
-COLUMNS_TO_DROP = [
-    'openfda_spl_set_id',
-    'openfda_product_ndc',
-    'openfda_spl_id',
-    'openfda_package_ndc',
-    'version',
-    'set_id',
-    'openfda_unii',
-    'spl_unclassified_section',
-    'openfda_application_number',
-    'effective_time'
-]
-
-COLUMN_RENAME_MAP = {
-    'package_label_principal_display_panel': 'product_package_label',
-    'openfda_manufacturer_name': 'product_manufacturer_name',
-    'openfda_product_type': "type_of_product",
-    'openfda_route': "how_to_use_product",
-    'purpose': "intended_purpose_of_product",
-    'openfda_generic_name': "generic_name",
-    'openfda_brand_name': "brand_name",
-    'openfda_substance_name': "substance_name",
-    "spl_product_data_elements": "full_ingredients",
-    "keep_out_of_reach_of_children": "keep_out_of_reach_of_children_warning",
-    "warnings": "product_warnings_and_cautions",
-    "id": "FDA_product_id",
-
-}
-
-THRESHOLD_NULL_VALUES = 0.4
-FILL_NA_VALUES = False
 
 
 def load_single_document(file_path: str) -> Document:
@@ -98,15 +51,11 @@ def load_documents(source_dir: str) -> List[Document]:
     csv_files = glob.glob(os.path.join(source_dir, "**/*.csv"), recursive=True)
     all_files = txt_files + pdf_files + csv_files
 
-    documents = []
     for file_path in all_files:
         documents_per_file = load_single_document(file_path)
         for document in documents_per_file:
             if document.page_content is not None:
-                documents.append(document)
-
-    return documents
-
+                yield document
 
 
 def load_embeddings_model():
@@ -134,15 +83,5 @@ def load_llm():
 
 
 def load_chroma():
-    return Chroma(persist_directory=PERSIST_DIRECTORY, embedding_function=load_embeddings_model(),
+    return Chroma(persist_directory=PERSIST_DIRECTORY, embedding_function=embedding_model,
                   client_settings=CHROMA_SETTINGS)
-
-
-def load_queries(file_path: str) -> List[str]:
-    with open(file_path) as f:
-        queries = f.readlines()
-
-    return queries
-
-
-QUERIES = load_queries(QUERY_PATH / "queries.txt")
