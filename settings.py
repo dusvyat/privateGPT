@@ -83,5 +83,5 @@ def load_llm():
 
 
 def load_chroma():
-    return Chroma(persist_directory=PERSIST_DIRECTORY, embedding_function=embedding_model,
+    return Chroma(persist_directory=PERSIST_DIRECTORY, embedding_function=load_embeddings_model(),
                   client_settings=CHROMA_SETTINGS)
