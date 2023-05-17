@@ -1,58 +1,79 @@
 import pandas as pd
+from settings import COLUMNS_TO_DROP, COLUMN_RENAME_MAP, THRESHOLD_NULL_VALUES, FILL_NA_VALUES
+
+from logging import getLogger
+
+logger = getLogger(__name__)
 
 
-def preprocess(input_path='unprocessed_data/drug_context_data.csv', output_path="source_documents/drug_context_cleaned.csv"):
+class Preprocessor:
+	def __init__(
+			self,
+			input_path: str='unprocessed_data/drug_context_data.csv',
+			output_path: str="source_documents/drug_context_cleaned.csv"
+	):
 
-	# remove columns with more than 40% null values
+		self.input_path = input_path
+		self.output_path = output_path
 
-	df = pd.read_csv(input_path, low_memory=False, encoding='utf-8')
+	def preprocess(
+			self,
+			threshold_null_values: float = 0.4,
+			columns_to_drop: list=None,
+			column_rename_map: dict=None,
+			fill_na: bool = False
+	):
 
-	original_columns = list(df.columns)
+		logger.info("Starting preprocessing data.")
 
+		df = pd.read_csv(self.input_path, low_memory=False, encoding='utf-8')
 
-	df.drop(
-		columns=['openfda_spl_set_id', 'openfda_product_ndc', 'openfda_spl_id', 'openfda_package_ndc', 'version',
-		         'set_id','openfda_unii','spl_unclassified_section','openfda_application_number','effective_time'], inplace=True
-	)
-	df.dropna(
-		axis=1, thresh=df.shape[0] * 0.4, inplace=True
-	)
+		original_columns = list(df.columns)
 
-	df.drop_duplicates(inplace=True)
+		if columns_to_drop is not None:
 
-	after_columns = list(df.columns)
+			df.drop(
+				columns=columns_to_drop, inplace=True
+			)
 
-	df.fillna(inplace=True, value='Data Not Available')
+		# remove columns with more than n% null values
+		df.dropna(
+			axis=1,
+			thresh=(df.shape[0] * threshold_null_values),
+			inplace=True
+		)
 
-	# remove special characters
-	df.replace(to_replace=r'[^a-zA-Z0-9 ]+', value='', regex=True, inplace=True)
+		df.drop_duplicates(inplace=True)
 
-	col_rename_dict = {
-		'package_label_principal_display_panel': 'product_package_label',
-		'openfda_manufacturer_name': 'product_manufacturer_name',
-		'openfda_product_type':"type_of_product",
-		'openfda_route': "how_to_use_product",
-		'purpose': "intended_purpose_of_product",
-		'openfda_generic_name':"generic_name",
-		'openfda_brand_name':"brand_name",
-		'openfda_substance_name': "substance_name",
-		"spl_product_data_elements":"full_ingredients",
-		"keep_out_of_reach_of_children":"keep_out_of_reach_of_children_warning",
-		"warnings":"product_warnings_and_cautions",
-		"id":"FDA_product_id",
-	}
+		after_columns = list(df.columns)
 
-	df.rename(col_rename_dict, axis=1, inplace=True)
+		if fill_na:
+			df.fillna(inplace=True, value='Data Not Available')
 
-	df["data_source"] = "U.S. Food and Drug Administration - FDA"
+		# remove special characters
+		df.replace(to_replace=r'[^a-zA-Z0-9 ]+', value='', regex=True, inplace=True)
 
-	print('original columns: ', original_columns)
+		if column_rename_map is not None:
 
-	print('after columns: ', after_columns)
+			df.rename(column_rename_map, axis=1, inplace=True)
 
-	df.to_csv(output_path, index=False)
+		df["data_source"] = "U.S. Food and Drug Administration - FDA"
+
+		logger.info('original columns: %s', original_columns)
+
+		logger.info('after columns: %s', after_columns)
+
+		logger.info("Finished preprocessing data... writing output to csv.")
+
+		df.to_csv(self.output_path, index=False)
 
 
 if __name__ == "__main__":
 
-	preprocess()
+	preprocessor = Preprocessor()
+	preprocessor.preprocess(
+		columns_to_drop=COLUMNS_TO_DROP,
+		column_rename_map=COLUMN_RENAME_MAP,
+		threshold_null_values=THRESHOLD_NULL_VALUES,
+		fill_na=FILL_NA_VALUES
+	)
