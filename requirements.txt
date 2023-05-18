@@ -6,4 +6,4 @@ urllib3==1.26.6
 pdfminer.six==20221105
 numpy
 pandas
-ipywidgets
+typer[all]
