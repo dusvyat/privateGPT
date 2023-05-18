@@ -1,7 +1,6 @@
 import os
 import glob
 from typing import List
-from dotenv import load_dotenv
 
 import torch
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
@@ -14,29 +13,29 @@ from langchain.vectorstores import Chroma
 
 from pathlib import Path
 
-TOGGLE_LOGGING = False
+#todo replace with config file
 
-PACKAGE_ROOT = Path(__file__).parent
-OUTPUT_PATH = PACKAGE_ROOT / "data" / "outputs"
+TOGGLE_LOGGING = True
+
+PACKAGE_ROOT = Path(__file__).parent.resolve()
+OUTPUT_PATH = PACKAGE_ROOT / "data" / "output"
 QUERY_PATH = PACKAGE_ROOT / "data" / "queries"
+
+INPUT_QUERIES_FILE = 'queries.txt'
+PERSIST_DIRECTORY = (PACKAGE_ROOT / 'db').as_posix()
+SOURCE_DIRECTORY = PACKAGE_ROOT / 'source_documents'
+EMBEDDINGS_MODEL_TYPE = 'sentence-transformers'
+EMBEDDINGS_MODEL_NAME = 'sentence-transformers/all-mpnet-base-v2'
+LLM_TYPE = 'GPT4All'
+LLM_PATH = 'models/ggml-gpt4all-j-v1.3-groovy.bin'
+
+MAX_TOKENS_LIMIT = 1024 # max token limit for LLM and embeddings
 
 check_path_exists = lambda path: os.makedirs(path, exist_ok=True)
 
 # create output and query directory if they don't exist
 check_path_exists(OUTPUT_PATH)
 check_path_exists(QUERY_PATH)
-
-# load environment variables
-load_dotenv()
-
-PERSIST_DIRECTORY = os.environ.get('PERSIST_DIRECTORY')
-SOURCE_DIRECTORY = os.environ.get('SOURCE_DIRECTORY', 'source_documents')
-LLM_TYPE = os.environ.get('LLM_TYPE')
-LLM_PATH = os.environ.get('LLM_PATH')
-
-MAX_TOKENS_LIMIT = os.environ.get('MAX_TOKENS_LIMIT')
-EMBEDDINGS_MODEL_TYPE = os.environ.get("EMBEDDINGS_MODEL_TYPE")
-EMBEDDINGS_MODEL_NAME = os.environ.get("EMBEDDINGS_MODEL_NAME")
 
 # Define the Chroma settings
 CHROMA_SETTINGS = Settings(
@@ -108,14 +107,13 @@ def load_documents(source_dir: str) -> List[Document]:
     return documents
 
 
-
 def load_embeddings_model():
     match EMBEDDINGS_MODEL_TYPE:
         case "Llama":
             embedding_model = LlamaCppEmbeddings(model_path=EMBEDDINGS_MODEL_NAME, n_ctx=MAX_TOKENS_LIMIT)
         case "sentence-transformers":
-            gpu_cpu = {'device': "gpu" if torch.cuda.is_available() else "cpu"}
-            embedding_model = HuggingFaceEmbeddings(model_name=EMBEDDINGS_MODEL_NAME, model_kwargs=gpu_cpu)
+            model_kwargs = {'device': "gpu" if torch.cuda.is_available() else "cpu"}
+            embedding_model = HuggingFaceEmbeddings(model_name=EMBEDDINGS_MODEL_NAME, model_kwargs = model_kwargs)
         case _:
             raise ValueError(f"Model {EMBEDDINGS_MODEL_TYPE} not supported!")
     return embedding_model
@@ -138,6 +136,12 @@ def load_chroma():
                   client_settings=CHROMA_SETTINGS)
 
 
+def get_retriever():
+    db = load_chroma()
+    retriever = db.as_retriever()
+    return retriever
+
+
 def load_queries(file_path: str) -> List[str]:
     with open(file_path) as f:
         queries = f.readlines()
@@ -145,4 +149,4 @@ def load_queries(file_path: str) -> List[str]:
     return queries
 
 
-QUERIES = load_queries(QUERY_PATH / "queries.txt")
+QUERIES = load_queries(QUERY_PATH / INPUT_QUERIES_FILE)

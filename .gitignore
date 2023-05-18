@@ -4,9 +4,9 @@
 # Models
 models/
 
-# Local Chroma db
+# Local Chroma db_from_incomplete_llamacpp
 .chroma/
-db/
+db_from_incomplete_llamacpp/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -16,7 +16,7 @@ Then, download the 2 models and place them in a directory of your choice.
 - LLM: default to [ggml-gpt4all-j-v1.3-groovy.bin](https://gpt4all.io/models/ggml-gpt4all-j-v1.3-groovy.bin). If you prefer a different GPT4All-J compatible model, just download it and reference it in your `.env` file.
 - Embedding: default to [ggml-model-q4_0.bin](https://huggingface.co/Pi3141/alpaca-native-7B-ggml/resolve/397e872bf4c83f4c642317a5bf65ce84a105786e/ggml-model-q4_0.bin). If you prefer a different compatible Embeddings model, just download it and reference it in your `.env` file.
 
-Rename `example.env` to `.env` and edit the variables appropriately.
+Edit the variables as required inside settings.py 
 ```
 MODEL_TYPE: supports LlamaCpp or GPT4All
 PERSIST_DIRECTORY: is the folder you want your vectorstore in
@@ -34,11 +34,17 @@ This repo uses a [state of the union transcript](https://github.com/imartinez/pr
 
 Put any and all of your .txt, .pdf, or .csv files into the source_documents directory
 
-Run the following command to ingest all the data.
+Run the following command to run the preprocessing and ingestion to vectorDB step.
+
+hint: you can use the `--help` flag to see all the options
+
+Note you will need to adapt the preprocessing step based on the input data
 
 ```shell
-python ingest.py
+ python runner.py --preprocess --ingest
+
 ```
+
 
 It will create a `db` folder containing the local vectorstore. Will take time, depending on the size of your documents.
 You can ingest as many documents as you want, and all will be accumulated in the local embeddings database. 
