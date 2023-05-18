@@ -57,8 +57,6 @@ def runner(
 	return question_answerer.results_df
 
 
-
-
 if __name__ == "__main__":
 	typer.run(runner)
 
