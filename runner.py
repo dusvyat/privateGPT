@@ -51,12 +51,12 @@ def runner(
 	else:
 		question_answerer.query(query)
 
-
-		return
 	if save_output:
 		question_answerer.output(OUTPUT_PATH)
 
-	question_answerer.results_df
+	return question_answerer.results_df
+
+
 
 
 if __name__ == "__main__":
