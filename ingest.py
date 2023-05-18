@@ -1,62 +1,51 @@
-import os
-import glob
-from typing import List
-from dotenv import load_dotenv
-
-from langchain.document_loaders import TextLoader, PDFMinerLoader, CSVLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
-from langchain.embeddings import LlamaCppEmbeddings
-from langchain.docstore.document import Document
-from constants import CHROMA_SETTINGS
+import time
+
+from settings import SOURCE_DIRECTORY, load_documents, PERSIST_DIRECTORY, CHROMA_SETTINGS, load_embeddings_model
+from logging import getLogger
+
+logger = getLogger(__name__)
 
 
-load_dotenv()
+class Ingestor:
 
+    @staticmethod
+    def split_documents():
 
-def load_single_document(file_path: str) -> Document:
-    # Loads a single document from a file path
-    if file_path.endswith(".txt"):
-        loader = TextLoader(file_path, encoding="utf8")
-    elif file_path.endswith(".pdf"):
-        loader = PDFMinerLoader(file_path)
-    elif file_path.endswith(".csv"):
-        loader = CSVLoader(file_path)
-    return loader.load()[0]
+        # Load documents and split in chunks
+        logger.info(f"Loading documents from {SOURCE_DIRECTORY}")
 
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+        documents = load_documents(SOURCE_DIRECTORY)
+        texts = text_splitter.split_documents(documents)
 
-def load_documents(source_dir: str) -> List[Document]:
-    # Loads all documents from source documents directory
-    txt_files = glob.glob(os.path.join(source_dir, "**/*.txt"), recursive=True)
-    pdf_files = glob.glob(os.path.join(source_dir, "**/*.pdf"), recursive=True)
-    csv_files = glob.glob(os.path.join(source_dir, "**/*.csv"), recursive=True)
-    all_files = txt_files + pdf_files + csv_files
-    return [load_single_document(file_path) for file_path in all_files]
+        logger.info(f"Loaded {len(documents)} documents from {SOURCE_DIRECTORY}")
+        logger.info(f"Split into {len(texts)} chunks of text (max. 500 tokens each)")
 
+        return texts
 
-def main():
-    # Load environment variables
-    persist_directory = os.environ.get('PERSIST_DIRECTORY')
-    source_directory = os.environ.get('SOURCE_DIRECTORY', 'source_documents')
-    llama_embeddings_model = os.environ.get('LLAMA_EMBEDDINGS_MODEL')
-    model_n_ctx = os.environ.get('MODEL_N_CTX')
+    def embeddings_to_vectordb(self):
 
-    # Load documents and split in chunks
-    print(f"Loading documents from {source_directory}")
-    documents = load_documents(source_directory)
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-    texts = text_splitter.split_documents(documents)
-    print(f"Loaded {len(documents)} documents from {source_directory}")
-    print(f"Split into {len(texts)} chunks of text (max. 500 tokens each)")
+        start_time = time.time()
 
-    # Create embeddings
-    llama = LlamaCppEmbeddings(model_path=llama_embeddings_model, n_ctx=model_n_ctx)
-    
-    # Create and store locally vectorstore
-    db = Chroma.from_documents(texts, llama, persist_directory=persist_directory, client_settings=CHROMA_SETTINGS)
-    db.persist()
-    db = None
+        # Load documents and split in chunks
+        texts = self.split_documents()
+
+        # Load embeddings model
+        embedding_model = load_embeddings_model()
+
+        # Create and store locally vectorstore
+        db = Chroma.from_documents(texts, embedding=embedding_model, persist_directory=PERSIST_DIRECTORY, client_settings=CHROMA_SETTINGS)
+        db.persist()
+        db = None
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+
+        logger.info("Fished creating vectorstore from documents.")
+        logger.info(f"Elapsed time: {round(elapsed_time/60)} minutes")
 
 
 if __name__ == "__main__":
-    main()
+    ingestor = Ingestor()
+    ingestor.embeddings_to_vectordb()
