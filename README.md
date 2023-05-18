@@ -38,7 +38,8 @@ Run the following command to run the preprocessing and ingestion to vectorDB ste
 
 hint: you can use the `--help` flag to see all the options
 
-Note you will need to adapt the preprocessing step based on the input data
+Note you will need to adapt the preprocessing step based on the input data, see preprocessing.py for more details on what it does.
+There are also column mappings and columns to drop inside settings.py
 
 ```shell
  python runner.py --preprocess --ingest
