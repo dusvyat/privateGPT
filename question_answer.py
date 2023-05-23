@@ -3,7 +3,7 @@ from collections import defaultdict
 
 import pandas as pd
 from langchain.chains import RetrievalQA
-from settings import load_llm, load_chroma, QUERIES, get_retriever, OUTPUT_PATH
+from settings import QUERIES, OUTPUT_PATH, load_config
 import logging
 from datetime import datetime
 
@@ -13,10 +13,11 @@ logger = logging.getLogger(__name__)
 
 class QuestionAnswerer:
 
-    def __init__(self):
+    def __init__(self, config_name: str = "config.yml"):
 
-        llm = load_llm()
-        retriever = get_retriever()
+        self.config = load_config(config_name)
+        llm = self.config.load_llm()
+        retriever = self.config.get_retriever()
 
         self.qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=True)
         self.output_data = defaultdict(list)
@@ -27,7 +28,7 @@ class QuestionAnswerer:
 
     def user_query(self):
         while True:
-            user_input = input("Please enter a question: ")
+            user_input = input("\n Please enter a question: ")
             if user_input == "exit":
                 return
             self._query(user_input)

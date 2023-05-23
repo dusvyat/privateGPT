@@ -27,6 +27,15 @@ MODEL_N_CTX: Maximum token limit for both embeddings and LLM models
 
 Note: because of the way `langchain` loads the `LLAMA` embeddings, you need to specify the absolute path of your embeddings model binary. This means it will not work if you use a home directory shortcut (eg. `~/` or `$HOME/`).
 
+Edit change the name of `example.env` to `.env` and edit the environment variables as required
+```
+TOKENIZERS_PARALLELISM:  whether or not to subprocesses for tokenizers, by default it is set to true
+WRITER_API_KEY: api key for writer (optional if you are not using writer)
+WRITER_ORG_ID= org id for writer (optional if you are not using writer)
+HUGGINGFACEHUB_API_TOKEN: api token for huggingface hub (optional if you are not using llm from huggingface hub)
+```
+
+
 ## Test dataset
 You can use any text input in form of either .csv, .txt, or .pdf files.
 

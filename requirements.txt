@@ -7,3 +7,5 @@ pdfminer.six==20221105
 numpy
 pandas
 typer[all]
+pydantic
+PyYAML

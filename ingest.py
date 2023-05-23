@@ -2,13 +2,17 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
 import time
 
-from settings import SOURCE_DIRECTORY, load_documents, PERSIST_DIRECTORY, CHROMA_SETTINGS, load_embeddings_model
+from settings import SOURCE_DIRECTORY, load_documents, PERSIST_DIRECTORY, CHROMA_SETTINGS, load_config
 from logging import getLogger
 
 logger = getLogger(__name__)
 
 
 class Ingestor:
+
+    def __init__(self,config_name:str="config.yml"):
+        self.config = load_config(config_name)
+
 
     @staticmethod
     def split_documents():
@@ -33,7 +37,7 @@ class Ingestor:
         texts = self.split_documents()
 
         # Load embeddings model
-        embedding_model = load_embeddings_model()
+        embedding_model = self.config.load_embeddings_model()
 
         # Create and store locally vectorstore
         db = Chroma.from_documents(texts, embedding=embedding_model, persist_directory=PERSIST_DIRECTORY, client_settings=CHROMA_SETTINGS)

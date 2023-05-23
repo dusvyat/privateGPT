@@ -1,0 +1,34 @@
+input_queries_file: 'queries.txt'
+embeddings_model_type: 'hugging-face-sentence-transformers'
+embeddings_model_name: 'sentence-transformers/all-mpnet-base-v2'
+llm_type: 'HuggingFaceHub'
+llm_path: 'Writer/palmyra-small' # Path to the LLM model, if its from api then just model_id
+max_token_limit: 1024
+columns_to_drop: 
+  - 'openfda_spl_set_id'
+  - 'openfda_product_ndc'
+  - 'openfda_spl_id'
+  - 'openfda_package_ndc'
+  - 'version'
+  - 'set_id'
+  - 'openfda_unii'
+  - 'spl_unclassified_section'
+  - 'openfda_application_number'
+  - 'effective_time'
+    
+column_rename_map:
+  'package_label_principal_display_panel': 'product_package_label'
+  'openfda_manufacturer_name': 'product_manufacturer_name'
+  'openfda_product_type': "type_of_product"
+  'openfda_route': "how_to_use_product"
+  'purpose': "intended_purpose_of_product"
+  'openfda_generic_name': "generic_name"
+  'openfda_brand_name': "brand_name"
+  'openfda_substance_name': "substance_name"
+  "spl_product_data_elements": "full_ingredients"
+  "keep_out_of_reach_of_children": "keep_out_of_reach_of_children_warning"
+  "warnings": "product_warnings_and_cautions"
+  "id": "FDA_product_id"
+
+threshold_null_values:  0.4
+fill_na_values: false

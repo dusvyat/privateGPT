@@ -1,5 +1,5 @@
 import pandas as pd
-from settings import COLUMNS_TO_DROP, COLUMN_RENAME_MAP, THRESHOLD_NULL_VALUES, FILL_NA_VALUES
+from settings import load_config
 
 from logging import getLogger
 
@@ -10,18 +10,16 @@ class Preprocessor:
 	def __init__(
 			self,
 			input_path: str='unprocessed_data/drug_context_data.csv',
-			output_path: str="source_documents/drug_context_cleaned.csv"
+			output_path: str="source_documents/drug_context_cleaned.csv",
+			config_name: str = "config.yml"
 	):
 
 		self.input_path = input_path
 		self.output_path = output_path
+		self.config = load_config(config_name)
 
 	def preprocess(
-			self,
-			threshold_null_values: float = 0.4,
-			columns_to_drop: list=None,
-			column_rename_map: dict=None,
-			fill_na: bool = False
+			self
 	):
 
 		logger.info("Starting preprocessing data.")
@@ -30,16 +28,16 @@ class Preprocessor:
 
 		original_columns = list(df.columns)
 
-		if columns_to_drop is not None:
+		if self.config.columns_to_drop is not None:
 
 			df.drop(
-				columns=columns_to_drop, inplace=True
+				columns=self.config.columns_to_drop, inplace=True
 			)
 
 		# remove columns with more than n% null values
 		df.dropna(
 			axis=1,
-			thresh=(df.shape[0] * threshold_null_values),
+			thresh=(df.shape[0] * self.config.threshold_null_values),
 			inplace=True
 		)
 
@@ -47,15 +45,15 @@ class Preprocessor:
 
 		after_columns = list(df.columns)
 
-		if fill_na:
+		if self.config.fill_na_values:
 			df.fillna(inplace=True, value='Data Not Available')
 
 		# remove special characters
 		df.replace(to_replace=r'[^a-zA-Z0-9 ]+', value='', regex=True, inplace=True)
 
-		if column_rename_map is not None:
+		if self.config.column_rename_map is not None:
 
-			df.rename(column_rename_map, axis=1, inplace=True)
+			df.rename(self.config.column_rename_map, axis=1, inplace=True)
 
 		df["data_source"] = "U.S. Food and Drug Administration - FDA"
 
@@ -71,9 +69,4 @@ class Preprocessor:
 if __name__ == "__main__":
 
 	preprocessor = Preprocessor()
-	preprocessor.preprocess(
-		columns_to_drop=COLUMNS_TO_DROP,
-		column_rename_map=COLUMN_RENAME_MAP,
-		threshold_null_values=THRESHOLD_NULL_VALUES,
-		fill_na=FILL_NA_VALUES
-	)
+	preprocessor.preprocess()

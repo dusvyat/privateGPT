@@ -5,59 +5,57 @@ import typer
 from ingest import Ingestor
 from preprocess import Preprocessor
 from question_answer import QuestionAnswerer
-from settings import COLUMNS_TO_DROP, COLUMN_RENAME_MAP, THRESHOLD_NULL_VALUES, FILL_NA_VALUES, QUERIES, OUTPUT_PATH,TOGGLE_LOGGING
+from settings import OUTPUT_PATH, LOGGING, CONFIG_PATH, load_config
 from logging import getLogger
 
-if TOGGLE_LOGGING:
+#if time fix this
+if LOGGING:
 
 	logger = getLogger(__name__)
 
 	logging.basicConfig(level=logging.INFO)
 
+class Runner:
+	"""Runner class to run the pipeline"""
 
-def runner(
-		query:str=None,
-		user_input:bool=False,
-		preprocess:bool=False,
-		ingest:bool=False,
-		save_output:bool=False
-):
-	"""specify the pipeline to run using arguments,
-	if using user input, specify the question to ask and when done enter 'exit' to save output,
-	if not, specify the questions to ask in the queries file"""
+	def __init__(self,config_name:str="config.yml"):
+		self.config_name = config_name
+		self.config = load_config(self.config_name)
 
-	# preprocess data
-	if preprocess:
+	def run(
+			self,
+			query:str=None,
+			preprocess:bool=False,
+			ingest:bool=False,
+			save_output:bool=False
+	):
+		"""specify the pipeline to run using arguments,
+		if using user input, specify the question to ask and when done enter 'exit' to save output,
+		if not, specify the questions to ask in the queries file"""
 
-		preprocessor = Preprocessor()
-		preprocessor.preprocess(
-			columns_to_drop=COLUMNS_TO_DROP,
-			column_rename_map=COLUMN_RENAME_MAP,
-			threshold_null_values=THRESHOLD_NULL_VALUES,
-			fill_na=FILL_NA_VALUES
-		)
+		# preprocess data
+		if preprocess:
 
-	# embed data
-	# ingest embeddings to vector db
-	# persist vector db to disk
+			preprocessor = Preprocessor(config_name=self.config_name)
+			preprocessor.preprocess()
 
-	if ingest:
-		ingestor = Ingestor()
-		ingestor.embeddings_to_vectordb()
-	question_answerer = QuestionAnswerer()
+		# embed data
+		# ingest embeddings to vector db
+		# persist vector db to disk
 
-	if user_input and query is None:
-		question_answerer.query()
-	else:
+		if ingest:
+			ingestor = Ingestor()
+			ingestor.embeddings_to_vectordb()
+		question_answerer = QuestionAnswerer()
+
 		question_answerer.query(query)
 
-	if save_output:
-		question_answerer.output(OUTPUT_PATH)
+		if save_output:
+			question_answerer.output(OUTPUT_PATH)
 
-	return question_answerer.results_df
+		return question_answerer.results_df
 
 
 if __name__ == "__main__":
-	typer.run(runner)
 
-
+	typer.run(Runner().run)
