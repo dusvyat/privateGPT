@@ -3,6 +3,7 @@ import glob
 from typing import List
 
 import torch
+from dotenv import load_dotenv
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.llms import GPT4All, LlamaCpp
 from langchain.document_loaders import TextLoader, PDFMinerLoader, CSVLoader
@@ -14,6 +15,8 @@ from langchain.vectorstores import Chroma
 from pathlib import Path
 
 #todo replace with config file
+
+load_dotenv()
 
 TOGGLE_LOGGING = True
 
