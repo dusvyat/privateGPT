@@ -6,8 +6,6 @@ from langchain.chains import RetrievalQA
 from settings import load_llm, load_chroma, QUERIES, get_retriever, OUTPUT_PATH
 import logging
 from datetime import datetime
-import time
-import typer
 
 
 logger = logging.getLogger(__name__)
