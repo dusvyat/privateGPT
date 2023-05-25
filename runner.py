@@ -18,7 +18,7 @@ if LOGGING:
 class Runner:
 	"""Runner class to run the pipeline"""
 
-	def __init__(self,config_name:str="config.yml"):
+	def __init__(self,config_name:str="writer_config.yml"):
 		self.config_name = config_name
 		self.config = load_config(self.config_name)
 
@@ -44,9 +44,9 @@ class Runner:
 		# persist vector db to disk
 
 		if ingest:
-			ingestor = Ingestor()
+			ingestor = Ingestor(config_name=self.config_name)
 			ingestor.embeddings_to_vectordb()
-		question_answerer = QuestionAnswerer()
+		question_answerer = QuestionAnswerer(config_name=self.config_name)
 
 		question_answerer.query(query)
 

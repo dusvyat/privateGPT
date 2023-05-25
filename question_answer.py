@@ -3,7 +3,7 @@ from collections import defaultdict
 
 import pandas as pd
 from langchain.chains import RetrievalQA
-from settings import QUERIES, OUTPUT_PATH, load_config
+from settings import OUTPUT_PATH, load_config
 import logging
 from datetime import datetime
 
@@ -13,13 +13,27 @@ logger = logging.getLogger(__name__)
 
 class QuestionAnswerer:
 
-    def __init__(self, config_name: str = "config.yml"):
+    def __init__(self, config_name: str = "writer_config.yml"):
 
         self.config = load_config(config_name)
         llm = self.config.load_llm()
         retriever = self.config.get_retriever()
 
-        self.qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=True)
+        if self.config.llm_type == 'HFH':
+            from langchain import PromptTemplate
+            prompt = PromptTemplate.from_file(template_file=self.config.prompt_template_file, input_variables=self.config.prompt_input_variables)
+            chain_type_kwargs = {"prompt": prompt}
+            self.qa = RetrievalQA.from_chain_type(
+                llm=llm,
+                chain_type="stuff",
+                retriever=retriever,
+                chain_type_kwargs=chain_type_kwargs,
+                return_source_documents=True
+            )
+
+        else:
+            self.qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=True)
+
         self.output_data = defaultdict(list)
 
     @property
@@ -65,7 +79,8 @@ class QuestionAnswerer:
 
         self.output_data["source_documents"].append(dict(sources))
 
-    def query(self,input_query: Union[list[str], str] = None):
+
+    def query(self, input_query: Union[list[str], str] = None):
 
         """Query the chroma database for an answer to a question."""
 
@@ -90,8 +105,8 @@ class QuestionAnswerer:
 
 if __name__ == "__main__":
 
-    question_answerer = QuestionAnswerer()
-    question_answerer.query(QUERIES)
+    question_answerer = QuestionAnswerer(config_name="hf_config.yml")
+    question_answerer.query("what product to use to treat a sore throat")
 
 
     print('finished')

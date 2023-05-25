@@ -10,7 +10,7 @@ logger = getLogger(__name__)
 
 class Ingestor:
 
-    def __init__(self,config_name:str="config.yml"):
+    def __init__(self,config_name:str="writer_config.yml"):
         self.config = load_config(config_name)
 
 

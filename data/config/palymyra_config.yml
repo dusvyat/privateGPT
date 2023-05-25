@@ -1,8 +1,14 @@
 input_queries_file: 'queries.txt'
 embeddings_model_type: 'hugging-face-sentence-transformers'
 embeddings_model_name: 'sentence-transformers/all-mpnet-base-v2'
-llm_type: 'HuggingFaceHub'
+llm_type: 'Palymyra-small' #HuggingFaceHub
 llm_path: 'Writer/palmyra-small' # Path to the LLM model, if its from api then just model_id
+task_type: 'question-answering'
+prompt_template_file: 'data/prompt_templates/hf-qa-input'
+prompt_input_variables:
+  - 'question'
+  - 'context'
+
 max_token_limit: 1024
 columns_to_drop: 
   - 'openfda_spl_set_id'

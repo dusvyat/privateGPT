@@ -11,7 +11,7 @@ class Preprocessor:
 			self,
 			input_path: str='unprocessed_data/drug_context_data.csv',
 			output_path: str="source_documents/drug_context_cleaned.csv",
-			config_name: str = "config.yml"
+			config_name: str = "writer_config.yml"
 	):
 
 		self.input_path = input_path

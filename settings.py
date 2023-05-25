@@ -1,7 +1,7 @@
 import os
 import glob
 from functools import lru_cache
-from typing import List
+from typing import List, Union
 from pathlib import Path
 from pydantic import BaseModel
 import yaml
@@ -9,7 +9,8 @@ import yaml
 import torch
 from dotenv import load_dotenv
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain.llms import GPT4All, LlamaCpp, Writer, HuggingFaceHub
+from langchain.llms import GPT4All, LlamaCpp, Writer
+from hf_endpoint import HfHub
 from langchain.document_loaders import TextLoader, PDFMinerLoader, CSVLoader
 from langchain.docstore.document import Document
 from langchain.embeddings import LlamaCppEmbeddings, HuggingFaceEmbeddings
@@ -53,6 +54,9 @@ class Config(BaseModel):
     embeddings_model_name: str = 'sentence-transformers/all-mpnet-base-v2'
     llm_type: str = 'GPT4All'
     llm_path: str = 'models/ggml-gpt4all-j-v1.3-groovy.bin'
+    task_type: str = 'question-answering'
+    prompt_template_file: str = 'data/prompt_templates/hf-qa-input'
+    prompt_input_variables: list = []
     max_token_limit: int = 1024
     columns_to_drop: List[str] = []
     column_rename_map: dict = {}
@@ -85,12 +89,20 @@ class Config(BaseModel):
             case "LlamaCpp":
                 llm = LlamaCpp(model_path=self.llm_path, n_ctx=self.max_token_limit, callbacks=callbacks, verbose=False)
             case "GPT4All":
-                llm = GPT4All(model=self.llm_path, n_ctx=self.max_token_limit, backend='gptj', callbacks=callbacks,verbose=False)
-            case "Writer":
-                llm = Writer(model_id=self.llm_path, callbacks=callbacks, max_tokens=self.max_token_limit, verbose=False)
-            case "HuggingFaceHub":
+                llm = GPT4All(model=self.llm_path, n_ctx=self.max_token_limit, backend='gptj', callbacks=callbacks, verbose=False)
+            case "Writer": # Writer API
+                llm = Writer(
+                    model_id=self.llm_path,
+                    callbacks=callbacks,
+                    max_tokens=self.max_token_limit,
+                    temperature=0.0,
+                    top_p=1,
+                    stop=[],
+                    best_of=5,
+                    verbose=False) # todo add more parameters if needed, eg random seed
+            case "HFH":  # HuggingFaceHub API
                 model_kwargs = {'max_tokens': self.max_token_limit}
-                llm = HuggingFaceHub(repo_id=self.llm_path, task='text2text-generation', model_kwargs=None, callbacks=callbacks, verbose=False)
+                llm = HfHub(endpoint_url=self.llm_path, task=self.task_type, model_kwargs=None, callbacks=callbacks, verbose=False)
             case _:
                 raise ValueError(f"The {self.llm_type} of LLM is not supported!")
         return llm
@@ -105,7 +117,7 @@ class Config(BaseModel):
         return retriever
 
 
-def load_queries(file_path: str) -> List[str]:
+def load_queries(file_path: Path) -> List[str]:
     with open(file_path) as f:
         queries = f.readlines()
 
@@ -121,7 +133,7 @@ def load_config(path) -> Config:
 
 
 @lru_cache()
-def load_single_document(file_path: str) -> Document:
+def load_single_document(file_path: str) -> Union[Document,List[Document]]:
     # Loads a single document from a file path
     if file_path.endswith(".txt"):
         loader = TextLoader(file_path, encoding="utf8")
